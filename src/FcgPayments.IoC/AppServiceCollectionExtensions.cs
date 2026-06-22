@@ -1,0 +1,49 @@
+using FluentValidation;
+using MediatR;
+using FcgPayments.Application;
+using FcgPayments.Domain;
+using FcgPayments.Domain.Repositories.Orders;
+using FcgPayments.Infrastructure.Database;
+using FcgPayments.Infrastructure.Messaging;
+using FcgPayments.Infrastructure.Repositories.Orders;
+using FcgPayments.SharedKernel.Behaviors;
+using FcgPayments.SharedKernel.Settings;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace FcgPayments.IoC;
+
+public static class AppServiceCollectionExtensions
+{
+    public static void ConfigureAppDependencies(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<JwtSettings>().Bind(configuration.GetSection("JwtSettings"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssemblies(
+                typeof(IDomainEntryPoint).Assembly,
+                typeof(IApplicationAssembly).Assembly,
+                typeof(ValidationBehavior<,>).Assembly)
+        );
+
+        services.AddValidatorsFromAssemblyContaining<IApplicationAssembly>();
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+        //Banco
+        services.AddDbContext<FcgPaymentsDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("Default"),
+                npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null)));
+
+        //MassTransit
+        services.AddMassTransitRabbitMqPublisher(configuration);
+
+        // Repositories
+        services.AddScoped<IOrderRepository, OrderRepository>();
+
+        // Services
+
+    }
+}

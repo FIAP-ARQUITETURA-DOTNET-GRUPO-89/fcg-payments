@@ -1,0 +1,67 @@
+name: 🧪 CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  tests:
+    name: 🧪 Unit Tests & Coverage
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: 📦 Restore
+        run: dotnet restore
+
+      - name: 🔨 Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: 🧪 Executar testes unitários com cobertura
+        run: |
+          dotnet test tests/FcgPayments.UnitTests/FcgPayments.UnitTests.csproj \
+            --no-build \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --settings .runsettings
+
+      - name: 📊 Instalar ReportGenerator
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: 📈 Gerar relatório de cobertura
+        run: |
+          reportgenerator \
+            -reports:"**/coverage.cobertura.xml" \
+            -targetdir:"coverage-report" \
+            -reporttypes:"Html;MarkdownSummary"
+
+      - name: 📝 Publicar resumo da cobertura
+        run: |
+          cat coverage-report/Summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: 💬 Comentar cobertura no Pull Request
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: coverage-report/Summary.md
+
+      - name: 📦 Upload relatório de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
+          retention-days: 3
