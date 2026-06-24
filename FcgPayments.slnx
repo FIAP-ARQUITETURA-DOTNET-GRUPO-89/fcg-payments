@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/1 - Presentation/">
+    <Project Path="src/FcgPayments.Api/FcgPayments.Api.csproj" Id="9a9b1e39-97e8-439a-af5f-8d94cfddd9c7" />
+    <Project Path="src/FcgPayments.AppHost/FcgPayments.AppHost.csproj" Id="a71f6d52-711e-4fef-b8d8-3741af06655d" />
+    <Project Path="src/FcgPayments.Worker/FcgPayments.Worker.csproj" />
+  </Folder>
+  <Folder Name="/2 - Application/">
+    <Project Path="src/FcgPayments.Application/FcgPayments.Application.csproj" Id="010342cb-876d-4d71-9064-2fc4780ed5fc" />
+  </Folder>
+  <Folder Name="/3 - Domain/">
+    <Project Path="src/FcgPayments.Domain/FcgPayments.Domain.csproj" />
+  </Folder>
+  <Folder Name="/4 - Infra/">
+    <Project Path="src/FcgPayments.Infrastructure/FcgPayments.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/5 - CrossCutting/">
+    <Project Path="src/FcgPayments.IoC/FcgPayments.IoC.csproj" Id="46f9da6c-befd-4f02-81f4-306b96da57a8" />
+    <Project Path="src/FcgPayments.ServiceDefaults/FcgPayments.ServiceDefaults.csproj" />
+    <Project Path="src/FcgPayments.SharedKernel/FcgPayments.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/6 - Tests/">
+    <Project Path="tests/FcgPayments.IntegrationTests/FcgPayments.IntegrationTests.csproj" Id="bffc731e-159d-4759-a184-6c50dc463390" />
+    <Project Path="tests/FcgPayments.UnitTests/FcgPayments.UnitTests.csproj" Id="4eb72cd3-bf11-4558-b55c-3c92e8c75e08" />
+  </Folder>
+</Solution>

@@ -1,0 +1,243 @@
+{
+  "info": {
+    "_postman_id": "2300da63-9773-4d5b-bdf4-576e5d40a9aa",
+    "name": "FcgPayments.Api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "16325510",
+    "_collection_link": "https://go.postman.co/collection/16325510-2300da63-9773-4d5b-bdf4-576e5d40a9aa?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Criar pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 1. Converte a resposta para JSON\r",
+                  "const responseData = pm.response.json();\r",
+                  "\r",
+                  "// 2. Obtém id do pedido\r",
+                  "const pedidoId = responseData.id;\r",
+                  "\r",
+                  "// 3. Salva especificamente nas variáveis da COLEÇÃO\r",
+                  "pm.collectionVariables.set(\"pedidoId\", pedidoId);\r",
+                  "\r",
+                  "console.log(\"Id do pedido salvo na Coleção: \" + pm.collectionVariables.get(\"pedidoId\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"customer\": \"Camila\",\r\n  \"totalAmount\": 150.00,\r\n  \"street\": \"Rua das Flores, 123\",\r\n  \"city\": \"São Paulo\",\r\n  \"state\": \"SP\",\r\n  \"cep\": \"01234567\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://localhost:7072/api/orders",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7072",
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar pedidos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:7072/api/orders?page=1&pageSize=10",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7072",
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obter pedido por Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:7072/api/orders/{{pedidoId}}",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7072",
+              "path": [
+                "api",
+                "orders",
+                "{{pedidoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar endereço de entrega",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"street\": \"Rua das Flores, 123\",\r\n  \"city\": \"São Paulo\",\r\n  \"state\": \"Sc\",\r\n  \"cep\": \"01234567\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://localhost:7072/api/orders/{{pedidoId}}",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7072",
+              "path": [
+                "api",
+                "orders",
+                "{{pedidoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar endereço de entrega Copy",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"newStatus\": \"Approved\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://localhost:7072/api/orders/{{pedidoId}}/force-status",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "7072",
+              "path": [
+                "api",
+                "orders",
+                "{{pedidoId}}",
+                "force-status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "pedidoId",
+      "value": ""
+    }
+  ]
+}
