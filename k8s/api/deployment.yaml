@@ -41,7 +41,7 @@ spec:
           image: camilamachado22/fcg-payments-api:1.0.0-preview.2
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 7072
+            - containerPort: 7040
           envFrom:
             - configMapRef:
                 name: fcg-payments-api-config
@@ -62,7 +62,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 7072
+              port: 7040
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 3
@@ -71,7 +71,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /ready
-              port: 7072
+              port: 7040
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
