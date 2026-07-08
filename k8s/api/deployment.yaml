@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/managed-by: kubectl
 
 spec:
-  replicas: 2
+  replicas: 1
 
   revisionHistoryLimit: 5
 
@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: fcg-payments-api
-          image: camilamachado22/fcg-payments-api:1.0.0-preview.2
+          image: camilamachado22/fcg-users-api:1.0.0-preview.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7040
@@ -50,14 +50,14 @@ spec:
           env:
             # Define se as migrations do EF Core serão executadas no startup da aplicação
             - name: RUN_MIGRATION
-              value: "false"
+              value: "true"
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: "50m"
+              memory: "128Mi"
             limits:
               cpu: "500m"
-              memory: "512Mi"
+              memory: "256Mi"
 
           livenessProbe:
             httpGet:
