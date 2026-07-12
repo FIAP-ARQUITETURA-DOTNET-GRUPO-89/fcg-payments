@@ -1,4 +1,4 @@
-using MassTransit;
+﻿using MassTransit;
 using FcgPayments.SharedKernel.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +20,12 @@ public static class MassTransitConfiguration
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                var connectionString = configuration.GetConnectionString("rabbitmq") ?? configuration["RabbitMQ:Host"];
+                var connectionString = configuration.GetConnectionString("Rabbitmq");
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    throw new InvalidOperationException("RabbitMQ connection string não configurada.");
+                }
 
                 cfg.Host(connectionString);
 
@@ -52,7 +57,12 @@ public static class MassTransitConfiguration
         {
             x.UsingRabbitMq((context, cfg) =>
             {
-                var connectionString = configuration.GetConnectionString("rabbitmq");
+                var connectionString = configuration.GetConnectionString("Rabbitmq");
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    throw new InvalidOperationException("RabbitMQ connection string não configurada.");
+                }
 
                 cfg.Host(connectionString);
             });
