@@ -33,7 +33,7 @@ public static class AppConfigureExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapOrdersEndpoints();
+        app.MapPaymentsEndpoints();
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/ready");

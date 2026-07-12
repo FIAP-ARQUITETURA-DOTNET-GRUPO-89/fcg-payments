@@ -3,6 +3,7 @@ using Aspire.Hosting.Testing;
 using FcgPayments.Infrastructure.Database;
 using FcgPayments.IntegrationTests.TestHelpers;
 using FcgPayments.SharedKernel.Settings;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +16,9 @@ namespace FcgPayments.IntegrationTests.Fixtures;
 public class IntegrationTestFixture : IAsyncLifetime
 {
     public DistributedApplication App { get; private set; } = default!;
+    public IBus Publisher { get; private set; } = default!;
 
+    private IBusControl _busControl = default!;
     private TestDatabaseManager _dbManager = default!;
     private string _connectionString = string.Empty;
 
@@ -51,6 +54,13 @@ public class IntegrationTestFixture : IAsyncLifetime
         _dbManager = new TestDatabaseManager(_connectionString);
         await _dbManager.InitializeAsync();
         await _dbManager.ResetAsync();
+
+        var rabbitMqConnStr = await App.GetConnectionStringAsync("rabbitmq")
+            ?? throw new InvalidOperationException("RabbitMQ connection string não encontrada");
+
+        _busControl = Bus.Factory.CreateUsingRabbitMq(cfg => cfg.Host(new Uri(rabbitMqConnStr)));
+        await _busControl.StartAsync();
+        Publisher = _busControl;
     }
 
     /// <summary>
@@ -58,6 +68,11 @@ public class IntegrationTestFixture : IAsyncLifetime
     /// </summary>
     public async ValueTask DisposeAsync()
     {
+        if (_busControl is not null)
+        {
+            await _busControl.StopAsync();
+        }
+
         if (App is not null)
         {
             await App.StopAsync();

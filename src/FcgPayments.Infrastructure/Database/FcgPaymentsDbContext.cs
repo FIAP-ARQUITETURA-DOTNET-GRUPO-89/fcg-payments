@@ -5,7 +5,7 @@ namespace FcgPayments.Infrastructure.Database;
 
 public class FcgPaymentsDbContext(DbContextOptions<FcgPaymentsDbContext> options) : DbContext(options)
 {
-    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(FcgPaymentsDbContext).Assembly);

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-config
+  namespace: fcg
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+  DOTNET_ENVIRONMENT: "Production"
+  JwtSettings__Issuer: "FcgPayments-Issuer"
+  JwtSettings__ExpirationHours: "2"
+  PaymentSimulation__ApprovalRate: "0.9"
+  MassTransit__RetryLimit: "5"
+  MassTransit__MinIntervalSeconds: "1"
+  MassTransit__MaxIntervalSeconds: "30"
+  MassTransit__IntervalDeltaSeconds: "2"
