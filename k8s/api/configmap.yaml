@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: fcg-payments-api-config
+  namespace: fcg-platform
+
+  labels:
+    app.kubernetes.io/name: fcg-payments-api
+    app.kubernetes.io/instance: fcg-payments-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: fcg-platform
+    app.kubernetes.io/managed-by: kubectl
+
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:7040"
+  Serilog__MinimumLevel__Default: "Debug"
+  Serilog__MinimumLevel__Override__Microsoft: "Warning"
+  Serilog__MinimumLevel__Override__System: "Warning"
+  Serilog__Properties__ApplicationName: "FcgPayments.Api"
+  JwtSettings__Issuer: "FcgUsers-Issuer"
+  JwtSettings__ExpirationHours: "2"
