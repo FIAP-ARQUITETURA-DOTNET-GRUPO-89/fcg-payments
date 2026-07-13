@@ -15,7 +15,7 @@ metadata:
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_URLS: "http://+:7040"
-  Serilog__MinimumLevel__Default: "Warning"
+  Serilog__MinimumLevel__Default: "Debug"
   Serilog__MinimumLevel__Override__Microsoft: "Warning"
   Serilog__MinimumLevel__Override__System: "Warning"
   Serilog__Properties__ApplicationName: "FcgPayments.Api"
