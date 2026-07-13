@@ -1,4 +1,4 @@
-using FcgPayments.Api.Endpoints;
+﻿using FcgPayments.Api.Endpoints;
 using FcgPayments.Api.Middlewares;
 using FcgPayments.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
