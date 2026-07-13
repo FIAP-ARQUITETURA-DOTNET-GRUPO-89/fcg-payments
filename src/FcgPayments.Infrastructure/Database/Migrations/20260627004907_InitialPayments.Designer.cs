@@ -3,6 +3,7 @@ using System;
 using FcgPayments.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FcgPayments.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(FcgPaymentsDbContext))]
-    partial class FcgPaymentsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627004907_InitialPayments")]
+    partial class InitialPayments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

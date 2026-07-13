@@ -1,8 +1,10 @@
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using FgcGames.EventContracts.Events;
 using FcgPayments.Infrastructure.Database;
 using FcgPayments.IntegrationTests.TestHelpers;
 using FcgPayments.SharedKernel.Settings;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +17,9 @@ namespace FcgPayments.IntegrationTests.Fixtures;
 public class IntegrationTestFixture : IAsyncLifetime
 {
     public DistributedApplication App { get; private set; } = default!;
+    public IBus Publisher { get; private set; } = default!;
 
+    private IBusControl _busControl = default!;
     private TestDatabaseManager _dbManager = default!;
     private string _connectionString = string.Empty;
 
@@ -51,6 +55,37 @@ public class IntegrationTestFixture : IAsyncLifetime
         _dbManager = new TestDatabaseManager(_connectionString);
         await _dbManager.InitializeAsync();
         await _dbManager.ResetAsync();
+
+        var rabbitMqConnStr = await App.GetConnectionStringAsync("rabbitmq")
+            ?? throw new InvalidOperationException("RabbitMQ connection string não encontrada");
+
+        _busControl = Bus.Factory.CreateUsingRabbitMq(cfg => cfg.Host(new Uri(rabbitMqConnStr)));
+        await _busControl.StartAsync();
+        Publisher = _busControl;
+
+        await WarmUpConsumerAsync();
+    }
+
+    /// <summary>
+    /// Publica um evento de prova e aguarda o Worker processá-lo,
+    /// garantindo que o consumer do MassTransit está bindado ao exchange antes dos testes.
+    /// </summary>
+    private async Task WarmUpConsumerAsync()
+    {
+        var probeOrderId = Guid.NewGuid();
+        var probeEvent = new OrderPlacedEvent(probeOrderId, Guid.NewGuid(), Guid.NewGuid(), 1.00m, DateTime.UtcNow);
+
+        await Publisher.Publish(probeEvent);
+
+        var result = await WaitUntil.ForAsync(
+            fetchAction: () => ExecuteDbContextAsync(ctx =>
+                ctx.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.OrderId == probeOrderId)),
+            predicate: p => p is not null,
+            timeout: TimeSpan.FromSeconds(60))
+            ?? throw new InvalidOperationException(
+                "Warm-up falhou: o Worker não consumiu o evento de prova em 60s. Verifique se o Worker está conectado ao RabbitMQ.");
+
+        await _dbManager.ResetAsync();
     }
 
     /// <summary>
@@ -58,6 +93,11 @@ public class IntegrationTestFixture : IAsyncLifetime
     /// </summary>
     public async ValueTask DisposeAsync()
     {
+        if (_busControl is not null)
+        {
+            await _busControl.StopAsync();
+        }
+
         if (App is not null)
         {
             await App.StopAsync();

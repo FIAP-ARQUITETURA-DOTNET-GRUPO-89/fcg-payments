@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -8,7 +8,7 @@ var postgres = isTesting
     ? builder.AddPostgres("Postgres")
         .WithLifetime(ContainerLifetime.Session)
         .AddDatabase("Default", "fcgpayments-db")
-    : builder.AddPostgres("Postgres", port: 5432)
+    : builder.AddPostgres("Postgres")
         .WithLifetime(ContainerLifetime.Persistent)
         .WithPgAdmin(c => c.WithLifetime(ContainerLifetime.Persistent))
         .AddDatabase("Default", "fcgpayments-db");

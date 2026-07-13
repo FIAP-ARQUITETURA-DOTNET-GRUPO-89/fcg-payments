@@ -2,10 +2,12 @@ using FluentValidation;
 using MediatR;
 using FcgPayments.Application;
 using FcgPayments.Domain;
-using FcgPayments.Domain.Repositories.Orders;
+using FcgPayments.Domain.Repositories.Payments;
+using FcgPayments.Domain.Services;
 using FcgPayments.Infrastructure.Database;
 using FcgPayments.Infrastructure.Messaging;
-using FcgPayments.Infrastructure.Repositories.Orders;
+using FcgPayments.Infrastructure.Payments;
+using FcgPayments.Infrastructure.Repositories.Payments;
 using FcgPayments.SharedKernel.Behaviors;
 using FcgPayments.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,10 @@ public static class AppServiceCollectionExtensions
     public static void ConfigureAppDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<JwtSettings>().Bind(configuration.GetSection("JwtSettings"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+        services.AddOptions<PaymentSimulationSettings>().Bind(configuration.GetSection("PaymentSimulation"))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
@@ -41,9 +47,9 @@ public static class AppServiceCollectionExtensions
         services.AddMassTransitRabbitMqPublisher(configuration);
 
         // Repositories
-        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Services
-
+        services.AddSingleton<IPaymentApprovalStrategy, RandomPaymentApprovalStrategy>();
     }
 }

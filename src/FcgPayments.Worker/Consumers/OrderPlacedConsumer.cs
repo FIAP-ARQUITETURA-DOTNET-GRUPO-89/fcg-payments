@@ -1,25 +1,28 @@
 using FgcGames.EventContracts.Events;
 using MassTransit;
 using MediatR;
-using FcgPayments.Application.Commands.Orders;
+using FcgPayments.Application.Commands.Payments;
 
 namespace FcgPayments.Worker.Consumers;
 
-public sealed partial class OrderPlacedConsumer(
+public sealed class OrderPlacedConsumer(
     IMediator mediator,
     ILogger<OrderPlacedConsumer> logger)
 : IConsumer<OrderPlacedEvent>
 {
     public async Task Consume(ConsumeContext<OrderPlacedEvent> context)
     {
-        LogOrderReceived(logger, context.Message.OrderId, context.Message.Price);
+        logger.LogInformation(
+            "OrderPlaced recebido. OrderId: {OrderId}, Valor: {Price}.",
+            context.Message.OrderId,
+            context.Message.Price);
 
-        await mediator.Send(new ApproveOrderCommand(context.Message.OrderId));
+        var command = new ProcessPaymentCommand(
+            context.Message.OrderId,
+            context.Message.UserId,
+            context.Message.GameId,
+            context.Message.Price);
+
+        await mediator.Send(command, context.CancellationToken);
     }
-
-    [LoggerMessage(
-        EventId = 1001,
-        Level = LogLevel.Information,
-        Message = "Pedido recebido. OrderId: {OrderId}, Valor: {Price}")]
-    private static partial void LogOrderReceived(ILogger logger, Guid orderId, decimal price);
 }

@@ -1,5 +1,4 @@
 using FcgPayments.Domain.Entities;
-using FcgPayments.Domain.ValueObjects;
 using FcgPayments.Infrastructure.Database;
 
 namespace FcgPayments.IntegrationTests.TestHelpers;
@@ -11,25 +10,19 @@ public static class TestDataSeeder
 {
     public static async Task SeedAsync(FcgPaymentsDbContext context)
     {
-        if (context.Orders.Any())
+        if (context.Payments.Any())
         {
             return;
         }
 
-        var order = new Order(
-            customer: "Cliente Teste",
-            totalAmount: 150.00m,
-            deliveryAddress: new Address(
-                street: "Rua Teste",
-                city: "Lages",
-                state: "SC",
-                cep: "88500000"
-            )
-        );
+        var payment = new Payment(
+            orderId: Guid.NewGuid(),
+            userId: Guid.NewGuid(),
+            gameId: Guid.NewGuid(),
+            amount: 99.90m);
 
-        context.Orders.Add(order);
+        context.Payments.Add(payment);
 
         await context.SaveChangesAsync();
     }
 }
-
