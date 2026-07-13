@@ -18,6 +18,8 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         }
         catch (ValidationException ex)
         {
+            _logger.LogWarning(ex, "Erro de validação na requisição {Method} {Path}", context.Request.Method, context.Request.Path);
+
             var errors = ex.Errors
                 .GroupBy(e => e.PropertyName)
                 .ToDictionary(

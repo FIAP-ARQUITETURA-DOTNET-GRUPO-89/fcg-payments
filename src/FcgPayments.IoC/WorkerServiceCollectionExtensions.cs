@@ -1,8 +1,12 @@
+using FluentValidation;
+using MediatR;
 using FcgPayments.Application;
 using FcgPayments.Domain;
-using FcgPayments.Domain.Repositories.Orders;
+using FcgPayments.Domain.Repositories.Payments;
+using FcgPayments.Domain.Services;
 using FcgPayments.Infrastructure.Database;
-using FcgPayments.Infrastructure.Repositories.Orders;
+using FcgPayments.Infrastructure.Payments;
+using FcgPayments.Infrastructure.Repositories.Payments;
 using FcgPayments.SharedKernel.Behaviors;
 using FcgPayments.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +23,10 @@ public static class WorkerServiceCollectionExtensions
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
+        services.AddOptions<PaymentSimulationSettings>().Bind(configuration.GetSection("PaymentSimulation"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssemblies(
                 typeof(IDomainEntryPoint).Assembly,
@@ -26,14 +34,18 @@ public static class WorkerServiceCollectionExtensions
                 typeof(ValidationBehavior<,>).Assembly)
         );
 
+        services.AddValidatorsFromAssemblyContaining<IApplicationAssembly>();
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
         //Banco
         services.AddDbContext<FcgPaymentsDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Default"),
                 npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null)));
 
         // Repositories
-        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         // Services
+        services.AddSingleton<IPaymentApprovalStrategy, RandomPaymentApprovalStrategy>();
     }
 }

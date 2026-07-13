@@ -1,163 +1,239 @@
-# 🚀 FcgPayments
+# FcgPayments
 
-Template de API desenvolvido com **ArchForge**, uma CLI para geração de projetos .NET padronizados.
+Microsservi&ccedil;o de processamento de pagamentos simulado da plataforma **FCG Games**. Consome eventos de pedidos criados pelo CatalogAPI, simula a aprova&ccedil;&atilde;o/rejei&ccedil;&atilde;o do pagamento e publica o resultado de volta para a plataforma.
 
-O objetivo do ArchForge é acelerar a criação de novos serviços, eliminando tarefas repetitivas de configuração e fornecendo uma estrutura consistente, testável e pronta para evolução.
+## Sum&aacute;rio
 
-## 📑 Sumário
+- [Vis&atilde;o Geral](#vis&atilde;o-geral)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Arquitetura](#arquitetura)
+- [Estrutura da Solu&ccedil;&atilde;o](#estrutura-da-solu&ccedil;&atilde;o)
+- [Pr&eacute;-requisitos](#pr&eacute;-requisitos)
+- [Executando Localmente](#executando-localmente)
+- [Eventos (Mensageria)](#eventos-mensageria)
+- [Endpoint da API](#endpoint-da-api)
+- [Banco de Dados](#banco-de-dados)
+- [Autentica&ccedil;&atilde;o JWT](#autentica&ccedil;&atilde;o-jwt)
+- [Testes](#testes)
+- [Vari&aacute;veis de Ambiente](#vari&aacute;veis-de-ambiente)
 
-- [📋 Tecnologias Utilizadas](#-tecnologias-utilizadas)
-- [🏛 Arquitetura](#-arquitetura)
-- [📁 Estrutura da Solução](#-estrutura-da-solução)
-- [▶️ Executando Localmente](#️-executando-localmente)
-- [🗄 Banco de Dados](#-banco-de-dados)
-- [🔐 Autenticação JWT](#-autenticação-jwt)
-  - [Gerando Token Manualmente](#gerando-token-manualmente)
-  - [Policies Disponíveis](#policies-disponíveis)
-- [📡 Coleção Postman](#-coleção-postman)
-- [🧪 Executando Testes](#-executando-testes)
-- [📚 Documentação](#-documentação)
-  - [ADRs](#adrs)
-  - [Diagramas](#diagramas)
-  - [Linguagem Ubíqua](#linguagem-ubíqua)
-- [🎯 Objetivos do Template](#-objetivos-do-template)
+## Vis&atilde;o Geral
 
-## 📋 Tecnologias Utilizadas
+O PaymentsAPI faz parte de uma arquitetura orientada a eventos composta por dois microsservi&ccedil;os:
 
-- .NET 10
-- ASP.NET Core Minimal API
-- .NET Aspire
-- MediatR
-- FluentValidation
-- Mapperly
-- Entity Framework Core
-- PostgreSQL
-- JWT Authentication
-- Health Checks
-- Serilog
-- xUnit
-- Shouldly
-- NSubstitute
-- Aspire Testing
-- Respawn
+```
+CatalogAPI                         PaymentsAPI
+(publica OrderPlacedEvent) ──────> Worker (consome e processa)
+(consome PaymentProcessedEvent) <── Worker (publica resultado)
+```
 
-## 🏛 Arquitetura
+O **Worker** consome `OrderPlacedEvent` do RabbitMQ, simula o processamento do pagamento (com taxa de aprova&ccedil;&atilde;o configur&aacute;vel), persiste o resultado no PostgreSQL e publica `PaymentProcessedEvent` de volta.
 
-Este template segue princípios de:
+A **API** exp&otilde;e um endpoint administrativo de consulta para diagn&oacute;stico.
 
-- Clean Architecture
-- Domain-Driven Design (DDD)
-- CQRS
-- SOLID
-- Separation of Concerns
+## Tecnologias Utilizadas
+
+| Categoria | Tecnologia |
+|---|---|
+| Runtime | .NET 10 |
+| API | ASP.NET Core Minimal API |
+| Orquestra&ccedil;&atilde;o local | .NET Aspire |
+| Mensageria | MassTransit + RabbitMQ |
+| Banco de dados | Entity Framework Core + PostgreSQL (Npgsql) |
+| Media&ccedil;&atilde;o | MediatR + CQRS |
+| Valida&ccedil;&atilde;o | FluentValidation |
+| Autentica&ccedil;&atilde;o | JWT Bearer |
+| Logs | Serilog |
+| Testes unit&aacute;rios | xUnit v3, Shouldly, NSubstitute |
+| Testes de integra&ccedil;&atilde;o | Aspire Testing, Testcontainers, Respawn |
+
+## Arquitetura
+
+O projeto segue **Clean Architecture** com **CQRS**, separando comandos (escrita) de queries (leitura).
 
 ### Camadas
 
-| Projeto                    | Responsabilidade                                       |
-| -------------------------- | ------------------------------------------------------ |
-| FcgPayments.Api             | Endpoints, Middlewares e Configurações                 |
-| FcgPayments.Application     | Casos de uso, Commands, Queries, Validators e Handlers |
-| FcgPayments.Domain          | Entidades, Regras de Negócio e Contratos               |
-| FcgPayments.Infrastructure  | Persistência, EF Core e Repositórios                   |
-| FcgPayments.IoC             | Registro de dependências                               |
-| FcgPayments.SharedKernel    | Componentes compartilhados                             |
-| FcgPayments.ServiceDefaults | Configurações compartilhadas Aspire                    |
-| FcgPayments.AppHost         | Orquestração Aspire                                    |
+| Projeto | Responsabilidade |
+|---|---|
+| `FcgPayments.Api` | Endpoints HTTP, middlewares e configura&ccedil;&atilde;o da API |
+| `FcgPayments.Worker` | Consumer MassTransit (`OrderPlacedConsumer`) |
+| `FcgPayments.Application` | Commands, queries, handlers e validators |
+| `FcgPayments.Domain` | Entidades, enums, interfaces de reposit&oacute;rio e servi&ccedil;os de dom&iacute;nio |
+| `FcgPayments.Infrastructure` | EF Core, reposit&oacute;rios, configura&ccedil;&atilde;o MassTransit |
+| `FcgPayments.IoC` | Registro de depend&ecirc;ncias |
+| `FcgPayments.SharedKernel` | Settings, exce&ccedil;&otilde;es e componentes transversais |
+| `FcgPayments.ServiceDefaults` | Configura&ccedil;&otilde;es compartilhadas do Aspire |
+| `FcgPayments.AppHost` | Orquestra&ccedil;&atilde;o Aspire (PostgreSQL, RabbitMQ, API, Worker) |
 
-## 📁 Estrutura da Solução
+### Fluxo de processamento
+
+1. `OrderPlacedConsumer` recebe `OrderPlacedEvent` do RabbitMQ
+2. Delega para `ProcessPaymentHandler` via MediatR
+3. Handler verifica idempot&ecirc;ncia por `OrderId` (se j&aacute; existe, republica o resultado sem reprocessar)
+4. Simula aprova&ccedil;&atilde;o/rejei&ccedil;&atilde;o via `IPaymentApprovalStrategy` (taxa configur&aacute;vel)
+5. Persiste `Payment` no PostgreSQL
+6. Publica `PaymentProcessedEvent` no RabbitMQ
+
+## Estrutura da Solu&ccedil;&atilde;o
 
 ```text
 src/
-├── FcgPayments.Api
-├── FcgPayments.AppHost
-├── FcgPayments.Application
-├── FcgPayments.Domain
-├── FcgPayments.Infrastructure
-├── FcgPayments.IoC
-├── FcgPayments.ServiceDefaults
-└── FcgPayments.SharedKernel
+├── FcgPayments.Api                 # API REST (consulta administrativa)
+├── FcgPayments.AppHost             # Aspire AppHost (orquestra tudo)
+├── FcgPayments.Application         # Casos de uso (CQRS)
+├── FcgPayments.Domain              # Entidades e regras de neg&oacute;cio
+├── FcgPayments.Infrastructure      # Persist&ecirc;ncia e mensageria
+├── FcgPayments.IoC                 # Inje&ccedil;&atilde;o de depend&ecirc;ncias
+├── FcgPayments.ServiceDefaults     # Defaults do Aspire
+├── FcgPayments.SharedKernel        # Componentes compartilhados
+└── FcgPayments.Worker              # Consumer de eventos
 
 tests/
-├── FcgPayments.UnitTests
-└── FcgPayments.IntegrationTests
-
-docs/
-├── adrs
-├── api-collection
-├── diagrams
-└── linguagem-ubiqua
+├── FcgPayments.UnitTests           # Testes unit&aacute;rios
+└── FcgPayments.IntegrationTests    # Testes de integra&ccedil;&atilde;o (Aspire + Testcontainers)
 ```
 
-## ▶️ Executando Localmente
+## Pr&eacute;-requisitos
 
-### Restaurar dependências
+| Ferramenta | Vers&atilde;o m&iacute;nima | Verificar |
+|---|---|---|
+| .NET SDK | 10.0 | `dotnet --version` |
+| Docker Desktop | Qualquer recente | Deve estar **rodando** |
+| .NET Aspire workload | &mdash; | `dotnet workload list` |
+
+Instalar o Aspire workload (se necess&aacute;rio):
+
+```bash
+dotnet workload install aspire
+```
+
+## Executando Localmente
+
+### 1. Restaurar depend&ecirc;ncias e compilar
 
 ```bash
 dotnet restore
-```
-
-### Compilar
-
-```bash
 dotnet build
 ```
 
-### Executar com Aspire
+### 2. Executar com Aspire (recomendado)
+
+O Aspire orquestra PostgreSQL, RabbitMQ (com Management Plugin), pgAdmin, a API e o Worker automaticamente via Docker:
 
 ```bash
 dotnet run --project src/FcgPayments.AppHost
 ```
 
-### Executar apenas a API
+O Aspire Dashboard abre no navegador e mostra todos os recursos:
+
+| Recurso | Descri&ccedil;&atilde;o |
+|---|---|
+| `fcgpayments-api` | API REST |
+| `fcgpayments-worker` | Consumer de eventos |
+| `Postgres` | Banco de dados + pgAdmin |
+| `rabbitmq` | Broker de mensagens + Management UI |
+
+A URL da API &eacute; exibida no Dashboard (ex: `https://localhost:7072`).
+
+## Eventos (Mensageria)
+
+### Evento consumido
+
+**`OrderPlacedEvent`** &mdash; publicado pelo CatalogAPI quando um usu&aacute;rio realiza uma compra.
+
+```csharp
+public sealed record OrderPlacedEvent(
+    Guid OrderId,
+    Guid UserId,
+    Guid GameId,
+    decimal Price,
+    DateTime CreatedAtUtc);
+```
+
+### Evento publicado
+
+**`PaymentProcessedEvent`** &mdash; publicado ap&oacute;s o processamento do pagamento.
+
+```csharp
+public sealed record PaymentProcessedEvent(
+    Guid OrderId,
+    Guid UserId,
+    Guid GameId,
+    decimal Price,
+    PaymentStatus Status,       // Approved | Rejected
+    DateTime ProcessedAtUtc);
+```
+
+### Configura&ccedil;&atilde;o de retry (MassTransit)
+
+O consumer utiliza retry exponencial configur&aacute;vel:
+
+| Par&acirc;metro | Default | Descri&ccedil;&atilde;o |
+|---|---|---|
+| `MassTransit:RetryLimit` | `5` | N&uacute;mero m&aacute;ximo de tentativas |
+| `MassTransit:MinIntervalSeconds` | `1` | Intervalo m&iacute;nimo entre retries |
+| `MassTransit:MaxIntervalSeconds` | `30` | Intervalo m&aacute;ximo entre retries |
+| `MassTransit:IntervalDeltaSeconds` | `2` | Fator de crescimento do backoff |
+
+## Endpoint da API
+
+| M&eacute;todo | Rota | Policy | Descri&ccedil;&atilde;o |
+|---|---|---|---|
+| `GET` | `/api/payments/{orderId}` | `AdminPolicy` | Consulta o pagamento pelo `OrderId` |
+
+**Respostas:**
+
+- `200 OK` &mdash; retorna `PaymentResponse` com `OrderId`, `Amount`, `Status`, `ProcessedAt`
+- `401 Unauthorized` &mdash; token JWT ausente ou inv&aacute;lido
+- `403 Forbidden` &mdash; usu&aacute;rio n&atilde;o possui role `Admin`
+- `404 Not Found` &mdash; nenhum pagamento encontrado para o `OrderId`
+
+## Banco de Dados
+
+O Aspire cria e gerencia o PostgreSQL automaticamente. As migrations s&atilde;o aplicadas na inicializa&ccedil;&atilde;o da aplica&ccedil;&atilde;o.
+
+### Entidade `Payment`
+
+| Coluna | Tipo | Descri&ccedil;&atilde;o |
+|---|---|---|
+| `Id` | `Guid` | Identificador &uacute;nico |
+| `OrderId` | `Guid` | ID do pedido (**&iacute;ndice &uacute;nico** &mdash; garante idempot&ecirc;ncia) |
+| `UserId` | `Guid` | ID do usu&aacute;rio |
+| `GameId` | `Guid` | ID do jogo |
+| `Amount` | `decimal` | Valor do pagamento |
+| `Status` | `enum` | `Pending`, `Approved` ou `Rejected` |
+| `ProcessedAt` | `DateTime?` | Data/hora do processamento |
+| `Reason` | `string?` | Motivo (preenchido em rejei&ccedil;&otilde;es) |
+
+### Criar migration manualmente
 
 ```bash
-dotnet run --project src/FcgPayments.Api
+dotnet ef migrations add NomeDaMigration -p src/FcgPayments.Infrastructure -s src/FcgPayments.Api --output-dir Database/Migrations
 ```
 
-## 🗄 Banco de Dados
+## Autentica&ccedil;&atilde;o JWT
 
-Criar migration:
-
-```bash
-dotnet ef migrations add MinhaMigration -p src/FcgPayments.Infrastructure -s src/FcgPayments.Api --output-dir Database/Migrations
-```
-
-Aplicar migrations:
-
-```bash
-dotnet ef database update -p src/FcgPayments.Infrastructure -s src/FcgPayments.Api
-```
-
-## 🔐 Autenticação JWT
-
-O template já possui autenticação JWT configurada.
-
-Configuração padrão:
-
-```json
-"JwtSettings": {
-    "Issuer": "FcgPayments-Issuer",
-    "SecurityKey": "FcgPayments_Secret_Key_2026_High_Security_Token",
-    "ExpirationHours": 2
-}
-```
-
-### Gerando Token Manualmente
-
-Acesse:
-
-🌐 https://jwt.io
-
-#### Header
+A API valida tokens JWT (n&atilde;o emite). A configura&ccedil;&atilde;o padr&atilde;o de desenvolvimento:
 
 ```json
 {
-  "alg": "HS256",
-  "typ": "JWT"
+  "JwtSettings": {
+    "Issuer": "FcgPayments-Issuer",
+    "SecurityKey": "FcgPayments_Secret_Key_2026_High_Security_Token",
+    "ExpirationHours": 2
+  }
 }
 ```
 
-#### Payload para perfil Admin
+### Gerando token manualmente (jwt.io)
+
+**Header:**
+
+```json
+{ "alg": "HS256", "typ": "JWT" }
+```
+
+**Payload Admin:**
 
 ```json
 {
@@ -169,7 +245,7 @@ Acesse:
 }
 ```
 
-#### Payload para perfil Customer
+**Payload Customer:**
 
 ```json
 {
@@ -181,36 +257,46 @@ Acesse:
 }
 ```
 
-#### Secret
+**Secret:** `FcgPayments_Secret_Key_2026_High_Security_Token`
 
-```text
-FcgPayments_Secret_Key_2026_High_Security_Token
-```
-
-Após gerar o token, utilize:
+**Uso:**
 
 ```http
 Authorization: Bearer {TOKEN}
 ```
 
-### Policies Disponíveis
+### Policies
 
-| Policy         | Roles Permitidas |
-| -------------- | ---------------- |
-| CustomerPolicy | Admin, Customer  |
-| AdminPolicy    | Admin            |
+| Policy | Roles permitidas |
+|---|---|
+| `AdminPolicy` | Admin |
+| `CustomerPolicy` | Admin, Customer |
 
-## 📡 Coleção Postman
+## Testes
 
-A coleção da API está disponível em:
+### Testes unit&aacute;rios (n&atilde;o precisa de Docker)
 
-```text
-docs/api-collection/
+```bash
+dotnet test tests/FcgPayments.UnitTests
 ```
 
-Importe o arquivo `.json` no Postman para iniciar os testes rapidamente.
+Cobertura:
+- `Payment` &mdash; constru&ccedil;&atilde;o, aprova&ccedil;&atilde;o, rejei&ccedil;&atilde;o, valida&ccedil;&otilde;es
+- `ProcessPaymentHandler` &mdash; aprova&ccedil;&atilde;o, rejei&ccedil;&atilde;o, idempot&ecirc;ncia
+- `PaymentRepository` &mdash; persist&ecirc;ncia e consulta
+- `RandomPaymentApprovalStrategy` &mdash; taxas 0%, 50%, 100%, valores inv&aacute;lidos
 
-## 🧪 Executando Testes
+### Testes de integra&ccedil;&atilde;o (requer Docker Desktop rodando)
+
+```bash
+dotnet test tests/FcgPayments.IntegrationTests
+```
+
+O Aspire sobe containers de PostgreSQL e RabbitMQ via Testcontainers. A primeira execu&ccedil;&atilde;o &eacute; mais lenta (pull das imagens).
+
+Cobertura:
+- `GET /api/payments/{orderId}` &mdash; 200, 404, 401, 403
+- `OrderPlacedConsumer` &mdash; processamento do evento e idempot&ecirc;ncia (evento duplicado)
 
 ### Todos os testes
 
@@ -218,91 +304,25 @@ Importe o arquivo `.json` no Postman para iniciar os testes rapidamente.
 dotnet test
 ```
 
-### Unitários
-
-```bash
-dotnet test tests/FcgPayments.UnitTests
-```
-
-### Integração
-
-```bash
-dotnet test tests/FcgPayments.IntegrationTests
-```
-
-## 📊 Cobertura de Testes
-
-O template já possui suporte à geração de cobertura de testes utilizando Coverlet.
-
-### Gerar cobertura dos testes unitários
+### Cobertura de c&oacute;digo
 
 ```bash
 dotnet test tests/FcgPayments.UnitTests --collect:"XPlat Code Coverage" --settings .runsettings
-```
-
-### Instalar o ReportGenerator
-
-Caso ainda não possua a ferramenta instalada:
-
-```bash
 dotnet tool install -g dotnet-reportgenerator-globaltool
-```
-
-### Gerar relatório HTML
-
-```bash
 reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;MarkdownSummary"
 ```
 
-### Visualizar relatório
+Abra `coverage-report/index.html` para visualizar o relat&oacute;rio.
 
-Abra o arquivo:
+## Vari&aacute;veis de Ambiente
 
-```text
-coverage-report/index.html
-```
+Quando executado pelo **Aspire AppHost**, todas as vari&aacute;veis s&atilde;o injetadas automaticamente. Para execu&ccedil;&atilde;o manual ou em produ&ccedil;&atilde;o:
 
-## 📚 Documentação
-
-A documentação do projeto fica centralizada na pasta:
-
-```text
-docs/
-```
-
-### ADRs
-
-```text
-docs/adrs
-```
-
-Registro das decisões arquiteturais.
-
-### Diagramas
-
-```text
-docs/diagrams
-```
-
-Diagramas de arquitetura e fluxo.
-
-### Linguagem Ubíqua
-
-```text
-docs/linguagem-ubiqua
-```
-
-Glossário do domínio.
-
-## 🎯 Objetivos do Template
-
-Este template foi criado para fornecer:
-
-- Estrutura pronta
-- Padronização entre serviços
-- Alta cobertura de testes
-- Baixo tempo de setup
-- Facilidade de manutenção
-- Evolução arquitetural consistente
-
-Gerado com ❤️ utilizando ArchForge.
+| Vari&aacute;vel / Setting | Descri&ccedil;&atilde;o | Exemplo |
+|---|---|---|
+| `ConnectionStrings:Default` | PostgreSQL | `Host=localhost;Database=fcgpayments-db;...` |
+| `ConnectionStrings:rabbitmq` | RabbitMQ | `amqp://guest:guest@localhost:5672` |
+| `JwtSettings:Issuer` | Emissor do token JWT | `FcgPayments-Issuer` |
+| `JwtSettings:SecurityKey` | Chave de assinatura do JWT | `FcgPayments_Secret_Key_2026_...` |
+| `PaymentSimulation:ApprovalRate` | Taxa de aprova&ccedil;&atilde;o (0.0 a 1.0) | `0.9` (90% aprovados) |
+| `MassTransit:RetryLimit` | Tentativas de retry do consumer | `5` |

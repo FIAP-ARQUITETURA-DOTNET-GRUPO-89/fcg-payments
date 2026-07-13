@@ -1,4 +1,4 @@
-using FcgPayments.Api.Endpoints;
+﻿using FcgPayments.Api.Endpoints;
 using FcgPayments.Api.Middlewares;
 using FcgPayments.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +33,7 @@ public static class AppConfigureExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapOrdersEndpoints();
+        app.MapPaymentsEndpoints();
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/ready");

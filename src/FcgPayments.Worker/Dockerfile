@@ -46,6 +46,8 @@ RUN apt-get update && apt-get install -y \
     krb5-locales \
     && rm -rf /var/lib/apt/lists/*
 
+# Esta fase é usada na produção ou quando executada no VS no modo normal (padrão quando não está usando a configuração de Depuração)
+FROM base AS final
 WORKDIR /app
 
 USER $APP_UID
