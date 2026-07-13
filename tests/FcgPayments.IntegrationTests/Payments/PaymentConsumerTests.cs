@@ -16,13 +16,17 @@ public class PaymentConsumerTests(IntegrationTestFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task Worker_QuandoRecebeOrderPlacedEvent_PersistePagamentoEPublicaResultado()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var orderId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var gameId = Guid.NewGuid();
         const decimal price = 199.90m;
 
-        await fixture.Publisher.Publish(new OrderPlacedEvent(orderId, userId, gameId, price, DateTime.UtcNow), ct);
+        var @event = new OrderPlacedEvent(orderId, userId, gameId, price, DateTime.UtcNow);
+
+        // Act
+        await fixture.Publisher.Publish(@event, ct);
 
         var payment = await WaitUntil.ForAsync(
             fetchAction: () => fixture.ExecuteDbContextAsync(ctx =>
@@ -30,6 +34,7 @@ public class PaymentConsumerTests(IntegrationTestFixture fixture) : IAsyncLifeti
             predicate: p => p is not null,
             timeout: TimeSpan.FromSeconds(30));
 
+        // Assert
         payment.ShouldNotBeNull();
         payment!.OrderId.ShouldBe(orderId);
         payment.UserId.ShouldBe(userId);
@@ -42,26 +47,30 @@ public class PaymentConsumerTests(IntegrationTestFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task Worker_QuandoRecebeEventoDuplicado_NaoCriaPagamentoDuplicado()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var orderId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var gameId = Guid.NewGuid();
         const decimal price = 99.90m;
 
-        var evento = new OrderPlacedEvent(orderId, userId, gameId, price, DateTime.UtcNow);
+        var @event = new OrderPlacedEvent(orderId, userId, gameId, price, DateTime.UtcNow);
 
-        await fixture.Publisher.Publish(evento, ct);
+        await fixture.Publisher.Publish(@event, ct);
 
-        await WaitUntil.ForAsync(
+        var firstPayment = await WaitUntil.ForAsync(
             fetchAction: () => fixture.ExecuteDbContextAsync(ctx =>
                 ctx.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.OrderId == orderId, ct)),
             predicate: p => p is not null,
             timeout: TimeSpan.FromSeconds(30));
 
-        await fixture.Publisher.Publish(evento, ct);
+        firstPayment.ShouldNotBeNull("O Worker não processou o primeiro evento dentro do tempo limite.");
 
-        await Task.Delay(2000, ct);
+        // Act
+        await fixture.Publisher.Publish(@event, ct);
+        await Task.Delay(3000, ct);
 
+        // Assert
         var count = await fixture.ExecuteDbContextAsync(ctx =>
             ctx.Payments.CountAsync(p => p.OrderId == orderId, ct));
 
