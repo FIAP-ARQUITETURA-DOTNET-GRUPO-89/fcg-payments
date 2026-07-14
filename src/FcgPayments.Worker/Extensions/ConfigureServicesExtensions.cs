@@ -1,4 +1,4 @@
-using FcgPayments.IoC;
+﻿using FcgPayments.IoC;
 using FcgPayments.Infrastructure.Messaging;
 using FcgPayments.Worker.Consumers;
 
@@ -12,7 +12,7 @@ public static class ConfigureServicesExtensions
 
         services.AddMassTransitRabbitMq(configuration, x =>
         {
-            x.AddConsumer<OrderPlacedConsumer>();
+            x.AddConsumer<OrderPlacedConsumer>().Endpoint(e => e.Name = "payments-order-placed-events");
         });
 
         return services;
