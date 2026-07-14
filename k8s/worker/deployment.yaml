@@ -36,7 +36,7 @@ spec:
       containers:
         - name: fcg-payments-worker
 
-          image: camilamachado22/fcg-users-worker:1.0.0-preview.2
+          image: jondamiao/fcg-payments-worker:1.0.0-preview.3
           imagePullPolicy: IfNotPresent
 
           envFrom:
