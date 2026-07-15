@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: fcg-payments-api
-          image: jondamiao/fcg-payments-api:1.0.0-preview.3
+          image: jondamiao/fcg-payments-api:1.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7040
