@@ -1,32 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   name: fcg-payments-api
   namespace: fcg-platform
-
   labels:
     app.kubernetes.io/name: fcg-payments-api
     app.kubernetes.io/instance: fcg-payments-api
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: fcg-platform
     app.kubernetes.io/managed-by: kubectl
-
 spec:
   replicas: 1
-
   revisionHistoryLimit: 5
-
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
-
   selector:
     matchLabels:
       app.kubernetes.io/name: fcg-payments-api
-
   template:
     metadata:
       labels:
@@ -34,12 +27,12 @@ spec:
         app.kubernetes.io/instance: fcg-payments-api
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: fcg-platform
-
     spec:
       containers:
         - name: fcg-payments-api
-          image: jondamiao/fcg-payments-api:1.0.0
-          imagePullPolicy: IfNotPresent
+          # Substituir pela URI real do ECR fornecida (ex: 123456789012.dkr.ecr.us-east-1.amazonaws.com/fcg-payments-api:latest)
+          image: fcg-payments-api:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 7040
           envFrom:
@@ -58,7 +51,6 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-
           livenessProbe:
             httpGet:
               path: /health
@@ -67,7 +59,6 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
-
           readinessProbe:
             httpGet:
               path: /ready
@@ -76,7 +67,6 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
-
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
