@@ -30,8 +30,7 @@ spec:
     spec:
       containers:
         - name: fcg-payments-api
-          # Substituir pela URI real do ECR fornecida (ex: 123456789012.dkr.ecr.us-east-1.amazonaws.com/fcg-payments-api:latest)
-          image: fcg-payments-api:latest
+          image: 368379549295.dkr.ecr.us-east-1.amazonaws.com/fcg-payments-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 7040
@@ -41,7 +40,8 @@ spec:
             - secretRef:
                 name: fcg-payments-api-secret
           env:
-            # Define se as migrations do EF Core serão executadas no startup da aplicação
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "7040"
             - name: RUN_MIGRATION
               value: "true"
           resources:
