@@ -36,7 +36,7 @@ spec:
       containers:
         - name: fcg-payments-worker
 
-          image: jondamiao/fcg-payments-worker:1.0.0
+          image: jondamiao/fcg-payments-worker:4.0.0-preview.0
           imagePullPolicy: IfNotPresent
 
           envFrom:
