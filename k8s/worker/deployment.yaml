@@ -35,8 +35,7 @@ spec:
     spec:
       containers:
         - name: fcg-payments-worker
-
-          image: jondamiao/fcg-payments-worker:4.0.0-preview.0
+          image: 368379549295.dkr.ecr.us-east-1.amazonaws.com/fcg-payments-worker:latest
           imagePullPolicy: IfNotPresent
 
           envFrom:

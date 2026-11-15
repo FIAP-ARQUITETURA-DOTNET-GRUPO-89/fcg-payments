@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: fcg-payments-api
-          image: jondamiao/fcg-payments-api:4.0.0-preview.0
+          image: 368379549295.dkr.ecr.us-east-1.amazonaws.com/fcg-payments-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7040
@@ -48,7 +48,6 @@ spec:
             - secretRef:
                 name: fcg-payments-api-secret
           env:
-            # Define se as migrations do EF Core serão executadas no startup da aplicação
             - name: RUN_MIGRATION
               value: "true"
           resources:

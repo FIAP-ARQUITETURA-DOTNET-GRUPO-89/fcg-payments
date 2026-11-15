@@ -1,0 +1,65 @@
+name: 🚀 CD - Payments
+
+on:
+  workflow_run:
+    workflows: ["🧪 CI"]
+    types:
+      - completed
+    branches:
+      - k8s-eks
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag da imagem publicada no ECR (ex: commit SHA ou latest)'
+        required: true
+        default: 'latest'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: fcg-platform
+  K8S_NAMESPACE: fcg-platform
+  ECR_REGISTRY: 368379549295.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  deploy:
+    name: ☸️ Deploy Payments to EKS
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 🔑 Autenticar na AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🏷️ Definir Tag da Imagem
+        id: set-tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ☸️ Configurar Kubeconfig para o EKS
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: 🔄 Atualizar Deployments no EKS (API e Worker)
+        env:
+          IMAGE_TAG: ${{ steps.set-tag.outputs.IMAGE_TAG }}
+        run: |
+          kubectl set image deployment/fcg-payments-api \
+            fcg-payments-api=${{ env.ECR_REGISTRY }}/fcg-payments-api:${IMAGE_TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/fcg-payments-api -n ${{ env.K8S_NAMESPACE }}
+
+          kubectl set image deployment/fcg-payments-worker \
+            fcg-payments-worker=${{ env.ECR_REGISTRY }}/fcg-payments-worker:${IMAGE_TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/fcg-payments-worker -n ${{ env.K8S_NAMESPACE }}
